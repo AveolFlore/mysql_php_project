@@ -2,7 +2,9 @@
 session_start();
 use Controllers\PageController;
 use Controllers\CoursController;
+use Controllers\ContactController;
 use Controllers\EtudiantController;
+use Controllers\RoomController;
 use Controllers\Auth\AuthController;
 use Middleware\Role;
 $middleware = new Role();
@@ -18,9 +20,12 @@ $controllerName = $part[0] ?? '/';
 $action = $part[1] ?? 'home';
 $id = $_GET['id'] ?? null;
 
+// Reconstruire l'action en joignant tous les éléments après le premier
+$action = implode('-', array_slice($part, 1)) ?: 'home';
+
 //Protections
 
-$protectedPages = ['home','etudiant','cours','contact','profil','user'];
+$protectedPages = ['home','etudiant','cours','room','contact','profil','user'];
 if (in_array($action,$protectedPages)) {
     $middleware->isAuthenticated();
 }
@@ -29,7 +34,8 @@ if(in_array($action,['login','register'])){
     $middleware -> isConnected();
 }
 
-if (in_array($action,['delete','update'])) {
+// Protéger uniquement 'update' et 'delete' simples, pas les variantes du profil
+if (in_array($action,['delete','update']) && !in_array($action, ['update-profile', 'update-password'])) {
     $middleware->isAdmin();
 }
 
@@ -51,6 +57,15 @@ if (isset($controllerName)) {
             // case 'login':
             //    $controllerInstance = new AuthController();
             //     break;
+            case 'room':
+               $controllerInstance = new RoomController();
+                break;
+            case 'cours':
+               $controllerInstance = new CoursController();
+                break;
+            case 'contact':
+               $controllerInstance = new ContactController();
+                break;
             case 'auth':
                $controllerInstance = new AuthController();
                 break;
@@ -85,6 +100,9 @@ if (isset($action)) {
             case 'cours':
                $controllerInstance->coursPage();
                 break;
+            case 'room':
+               $controllerInstance->roomPage();
+                break;
             case 'contact':
                 $controllerInstance->contactPage();
                 break;
@@ -115,6 +133,10 @@ if (isset($action)) {
             case 'update-profile':
                 $controllerInstance->updateProfile($_POST);
                 break;
+            case 'update-password':
+                $controllerInstance->updatePassword($_POST);
+                break;
+
             default:
                 echo "Action non existant !";
                 break;

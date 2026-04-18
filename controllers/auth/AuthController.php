@@ -2,210 +2,224 @@
 namespace Controllers\Auth;
 use Config\Database;
 use Models\User;
-use Middleware\Role;
 use PDO;
-class AuthController{
+
+class AuthController {
     private User $userModel;
     private Database $database;
     private PDO $pdo;
-    public string $userName;
-    public string $email;
-    public string $mdp;
-    // public string $role;
 
     public function __construct(){
-        $this->database = new Database;
-        $this->pdo=$this->database->connect();
-        $this->userModel = new User($this->database->connect());
+        $this->database  = new Database;
+        $this->pdo       = $this->database->connect();
+        $this->userModel = new User($this->pdo); // ✅ une seule connexion
     }
-    public function index():array{
+
+    public function index(): array {
         return $this->userModel->readAll();
     }
+
     public function sanitize($data){
-        $data = trim($data);
-        $data=stripslashes($data);
-        $data=htmlspecialchars($data);
-        return $data;
-    }
-    public function initialize(){
-        unset($_SESSION["userName"]);
-        unset($_SESSION["mdp"]);
-        unset($_SESSION["email"]);
-        // unset($_SESSION["role"]);
-        unset($_SESSION["id"]);
+        return htmlspecialchars(stripslashes(trim($data)));
     }
 
-    public function register(array $data){
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $validate = [
-                'userName' => $this->sanitize($data["userName"]),
-                'email' => $this->sanitize($data["email"]),
-                'mdp' => $data["mdp"],
-                ];
-                
-         // Vérifier si email existe déjà
-       
-        if (!empty($data['userName']) && !empty($data['email'])&& !empty($data['mdp'])) {
-             if ($this->userModel->findByEmail($data["email"])) {
-                echo "Email déjà utilisé";
-                return;
-        }
-          if(!empty($data['add_etudiant']) && $data['add_etudiant'] == "S'inscrire"){
-             $r = $this->userModel->create($validate);
-             header("Location:/page-login?msg=succès");      
-            exit;       
-          }
-        }else {
-            header("Location:/page-register?msg=Tous les champs sont requis");
-            exit;
-        }
-    }else {
-     header("Location:/page-register?msg=echec");
-     exit;
-    }
+   public function register(array $data){
+    if ($_SERVER['REQUEST_METHOD'] !== "POST") {
+        header("Location:/page-register?msg=echec");
+        exit;
     }
 
-    public function login(){
-       if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+    if (empty($data['userName']) || empty($data['email']) || empty($data['mdp']) || empty($data['mdp_confirm'])) {
+        header("Location:/page-register?msg=Tous les champs sont requis");
+        exit;
     }
-        if($_SERVER['REQUEST_METHOD']==="POST"){
-            $email = $_POST['email'];
-            $mdp = $_POST['mdp'];
-        $user = $this->userModel->findByEmail($email);
-        if (!$user) {
-            echo "Utilisateur non trouvé";
-            return;
-        }
-if (password_verify($mdp,$user['mdp'])) {
-    $_SESSION['user'] = [
-        'id' => $user['id'],
-        'userName' => $user['userName'],
-        'email' => $user['email'],
-        'role' => $user['role'],
+
+    // ✅ Vérification de la confirmation
+    if ($data['mdp'] !== $data['mdp_confirm']) {
+        header("Location:/page-register?msg=Les mots de passe ne correspondent pas");
+        exit;
+    }
+
+    // ✅ Longueur minimale
+    if (strlen($data['mdp']) < 6) {
+        header("Location:/page-register?msg=Mot de passe trop court (6 caractères minimum)");
+        exit;
+    }
+
+    $validate = [
+        'userName' => $this->sanitize($data['userName']),
+        'email'    => $this->sanitize($data['email']),
+        'mdp'      => $data['mdp'],
     ];
-    // echo "connexion reussi";
-     header("Location:/page-home");
-     exit;
-}else{
-    echo "Mot de passe incorrect";
-}
+
+    if ($this->userModel->findByEmail($validate['email'])) {
+        header("Location:/page-register?msg=Email déjà utilisé");
+        exit;
     }
 
+    $this->userModel->create($validate);
+    header("Location:/page-login?msg=Compte créé avec succès");
+    exit;
 }
-   public function update(array $data, $id = null)
-    {
-           if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-        if($_SERVER['REQUEST_METHOD']  === "POST") {
-            //Recup assainissement des données
-            $validate = [
-               
-                'role' => $this->sanitize($data['role']),
-               
-            ];
-   
-            if(!empty($data['role'])) {
-                $id = $data['e_id'];
-          
-               
-                    $r = $this->userModel->update($id, $validate);
-                    if($r){
-                        header("Location: page-auth?msg=succès");
-                        }else {
-                        header("Location: page-auth?msg=Erreur");
-                    }
-               
-              
-                exit;
-            }else {
-                header("Location: page-etudiant?msg=Tous les champs sont requis");
-                exit;
-            }
-           
-        }else {
-            header("Location: page-etudiant?msg=echec");
+    public function login(){
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if ($_SERVER['REQUEST_METHOD'] !== "POST") {
+            header("Location:/page-login");
             exit;
         }
+
+        $email = $_POST['email'] ?? '';
+        $mdp   = $_POST['mdp'] ?? '';
+        $user  = $this->userModel->findByEmail($email);
+
+        if (!$user) {
+            header("Location:/page-login?msg=Utilisateur non trouvé");
+            exit;
+        }
+
+        if (password_verify($mdp, $user['mdp'])) {
+            $_SESSION['user'] = [
+                'id'       => $user['id'],
+                'userName' => $user['userName'],
+                'email'    => $user['email'],
+                'role'     => $user['role'],
+            ];
+            header("Location:/page-home");
+            exit;
+        }
+
+        header("Location:/page-login?msg=Mot de passe incorrect");
+        exit;
     }
 
-    // public function getById(int $id){
-    //  return $this->etudiantModel->getFindId($id);
-    // }
-    public function destroy(int $id){
-           if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+    public function update(array $data){
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if ($_SERVER['REQUEST_METHOD'] !== "POST") {
+            header("Location: page-auth?msg=echec");
+            exit;
+        }
+
+        if (empty($data['role']) || empty($data['e_id'])) {
+            header("Location: page-auth?msg=Tous les champs sont requis");
+            exit;
+        }
+
+        $validate = ['role' => $this->sanitize($data['role'])];
+        $id = (int) $data['e_id'];
+        $r  = $this->userModel->update($id, $validate);
+
+        header($r ? "Location: page-auth?msg=succès" : "Location: page-auth?msg=Erreur");
+        exit;
     }
-    if($_SESSION['user']['id']===$id){
+
+    public function destroy(int $id){
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if ($_SESSION['user']['id'] === $id) {
+            header("Location:page-auth?msg=Impossible de supprimer votre propre compte");
+            exit;
+        }
+
+        $result = $this->userModel->delete($id);
+        header($result ? "Location:page-auth?msg=succes" : "Location:page-auth?msg=echec");
+        exit;
+    }
+
+    public function edit(int $id){
+        $result = $this->userModel->getFindId($id);
+        $_SESSION['id']   = $result['id'];
+        $_SESSION['role'] = $result['role'];
         header("Location:page-auth");
         exit;
     }
-     $result= $this->userModel->delete($id);
-     if($result){
-        header("Location:page-auth?msg=succes");
-        exit;
-     }else {
-      header("Location:page-auth?msg=echec");
-      exit;
 
-     }
-    }
-    public function edit(int $id){
-     $result= $this->userModel->getFindId($id);
-   
-     $role = $result['role'];
-     $id = $result['id'];
+    // ✅ Mise à jour profil (nom + email seulement)
+    public function updateProfile(array $data){
+        if (session_status() === PHP_SESSION_NONE) session_start();
 
-     $_SESSION['id']=$id;
-     $_SESSION['role']=$role;
-    header("Location:page-auth");
-      exit;
-    }
+        $id       = (int) $data['id'];
+        // Vérifier que l'utilisateur ne modifie que son propre profil
+        if ($id !== $_SESSION['user']['id']) {
+            header("Location:/page-profil?msg=Accès refusé");
+            exit;
+        }
+        
+        $userName = $this->sanitize($data['userName']);
+        $email    = $this->sanitize($data['email']);
 
-    public function updateProfile(array $data)
-{
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+        // Vérifier que l'utilisateur existe
+        $user = $this->userModel->getFindId($id);
+        if (!$user) {
+            header("Location:/page-profil?msg=error");
+            exit;
+        }
 
-    $id = $data['id'];
-    $userName = $this->sanitize($data['userName']);
-    $email = $this->sanitize($data['email']);
-    $mdp = $data['mdp'] ?? null;
+        $r = $this->userModel->updateProfile($id, [
+            'userName' => $userName,
+            'email'    => $email,
+        ]);
 
-    // récup user actuel
-    $user = $this->userModel->findByEmail($_SESSION['user']['email']);
-
-    if (!$user) {
-        header("Location: /page-profil?msg=error");
+        if ($r) {
+            $_SESSION['user']['userName'] = $userName;
+            $_SESSION['user']['email']    = $email;
+            header("Location:/page-profil?msg=success");
+        } else {
+            header("Location:/page-profil?msg=error");
+        }
         exit;
     }
 
+    // ✅ Mise à jour mot de passe séparée
+    public function updatePassword(array $data){
+        if (session_status() === PHP_SESSION_NONE) session_start();
 
-    if (!empty($mdp)) {
-        $mdp = password_hash($mdp, PASSWORD_DEFAULT);
-    } else {
-        $mdp = $user['mdp']; // ancien mdp
+        $id          = (int) $data['id'];
+        // Vérifier que l'utilisateur ne modifie que son propre mot de passe
+        if ($id !== $_SESSION['user']['id']) {
+            header("Location:/page-profil?msg=Accès refusé");
+            exit;
+        }
+        
+        $ancienMdp   = $data['ancien_mdp'] ?? '';
+        $nouveauMdp  = $data['nouveau_mdp'] ?? '';
+        $confirmation = $data['confirmation'] ?? '';
+
+        $user = $this->userModel->getFindId($id);
+        if (!$user) {
+            header("Location:/page-profil?msg=error");
+            exit;
+        }
+
+        // ✅ Vérifier l'ancien mot de passe
+        if (!password_verify($ancienMdp, $user['mdp'])) {
+            header("Location:/page-profil?msg=Ancien mot de passe incorrect");
+            exit;
+        }
+
+        // ✅ Vérifier la confirmation
+        if ($nouveauMdp !== $confirmation) {
+            header("Location:/page-profil?msg=Les mots de passe ne correspondent pas");
+            exit;
+        }
+
+        if (strlen($nouveauMdp) < 6) {
+            header("Location:/page-profil?msg=Mot de passe trop court");
+            exit;
+        }
+
+        $hashed = password_hash($nouveauMdp, PASSWORD_DEFAULT);
+        $r = $this->userModel->updatePassword($id, $hashed);
+
+        header($r ? "Location:/page-profil?msg=Mot de passe mis à jour" : "Location:/page-profil?msg=error");
+        exit;
     }
 
-    $this->userModel->updateProfile($id, [
-        'userName' => $userName,
-        'email' => $email,
-        'mdp' => $mdp
-    ]);
-
-    // update session
-    $_SESSION['user']['userName'] = $userName;
-    $_SESSION['user']['email'] = $email;
-
-    header("Location: /page-profil?msg=success");
-    exit;
-}
-
-public function logout() {
+    public function logout(){
+        if (session_status() === PHP_SESSION_NONE) session_start();
         session_destroy();
         header("Location:/page-login");
+        exit;
     }
-
 }

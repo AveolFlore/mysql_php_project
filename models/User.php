@@ -9,6 +9,7 @@ class User {
     public string $email;
     public string $mdp;
     public string $string;
+    public string $role;
 
     public function __construct($db){
         $this->conn=$db;
@@ -97,21 +98,23 @@ class User {
             }
     }
 
-    public function updateProfile($id, $data)
-{
-    $query = "UPDATE users 
-              SET userName = :userName,
-                  email = :email,
-                  mdp = :mdp
-              WHERE id = :id";
+  public function updateProfile(int $id, array $data){
+        $query = "UPDATE {$this->table} SET userName = :userName, email = :email WHERE id = :id";
+        $stmt  = $this->conn->prepare($query);
+        return $stmt->execute([
+            ':userName' => $data['userName'],
+            ':email'    => $data['email'],
+            ':id'       => $id,
+        ]);
+    }
 
-    $stmt = $this->conn->prepare($query);
-
-    return $stmt->execute([
-        ':userName' => $data['userName'],
-        ':email' => $data['email'],
-        ':mdp' => $data['mdp'],
-        ':id' => $id
-    ]);
-}
+    // ✅ Mise à jour du mot de passe séparée
+    public function updatePassword(int $id, string $hashedMdp){
+        $query = "UPDATE {$this->table} SET mdp = :mdp WHERE id = :id";
+        $stmt  = $this->conn->prepare($query);
+        return $stmt->execute([
+            ':mdp' => $hashedMdp,
+            ':id'  => $id,
+        ]);
+    }
 }

@@ -2,6 +2,8 @@
 use Controllers\Auth\AuthController;
 $users = new AuthController();
 $datas = $users->index();
+
+$msg = $_GET['msg'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -13,6 +15,10 @@ $datas = $users->index();
 </head>
 <body>
     <?= require_once '../views/partials/header.php';?>
+
+    <?php if ($msg): ?>
+        <p class="msg"><?= htmlspecialchars($msg) ?></p>
+    <?php endif; ?>
 
      <div class="table">
         <table>

@@ -60,7 +60,7 @@ class EtudiantController {
                 if( !empty($data['add_etudiant']) && $data['add_etudiant'] == 'Ajouter') {
  
                     $r = $this->etudiantModel->create($validate);
-                    header("Location: page-etudiant?msg=succès");
+                    header("Location:/page-etudiant?msg=succès");
                    
                     exit;
                 }
@@ -70,7 +70,7 @@ class EtudiantController {
             }
            
         }else {
-            header("Location: page-etudiant?msg=echec");
+            header("Location:/page-etudiant?msg=echec");
             exit;
         }
     }
@@ -98,7 +98,7 @@ class EtudiantController {
                         $this->initialize();
                         header("Location: page-etudiant?msg=succès");
                         }else {
-                        header("Location: page-etudiant?msg=Erreur");
+                        header("Location:/page-etudiant?msg=Erreur");
                     }
                
                 }elseif( !empty($data['reset']) && $data['reset'] == 'Annuler') {// update
@@ -112,7 +112,7 @@ class EtudiantController {
             }
            
         }else {
-            header("Location: page-etudiant?msg=echec");
+            header("Location:/page-etudiant?msg=echec");
             exit;
         }
     }

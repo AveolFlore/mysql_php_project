@@ -2,33 +2,33 @@
 use Controllers\Auth\AuthController;
 $auth = new AuthController();
 
+$msg = $_GET['msg'] ?? null;
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Connexion - Gestion Scolaire</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
- <div class="auth-container">
-    <div class="auth-box fade-in">
+    <div class="auth-container">
+        <div class="auth-box">
+            <h2>Connexion</h2>
 
-        <h2> Connexion</h2>
+            <?php if ($msg): ?>
+                <p class="msg"><?= htmlspecialchars($msg) ?></p>
+            <?php endif; ?>
 
-        <form action="/auth-connect" method="POST">
-            <input type="email" name="email" placeholder="Votre email" required>
-            <input type="password" name="mdp" placeholder="Mot de passe" required>
+            <form action="/auth-connect" method="POST">
+                <input type="email" name="email" placeholder="Votre email" required>
+                <input type="password" name="mdp" placeholder="Mot de passe" required>
+                <button type="submit">Se connecter</button>
+            </form>
 
-            <!-- <button type="submit">Se connecter</button> -->
-            <input type="submit" value="Se connecter" name="add_etudiant">
-
-        </form>
-
-        <a href="/page-register">Créer un compte</a>
-
+            <a href="/page-register">Créer un compte</a>
+        </div>
     </div>
-</div>
 </body>
 </html>
