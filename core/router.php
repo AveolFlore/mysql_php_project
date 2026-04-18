@@ -20,10 +20,8 @@ $controllerName = $part[0] ?? '/';
 $action = $part[1] ?? 'home';
 $id = $_GET['id'] ?? null;
 
-// Reconstruire l'action en joignant tous les éléments après le premier
 $action = implode('-', array_slice($part, 1)) ?: 'home';
 
-//Protections
 
 $protectedPages = ['home','etudiant','cours','room','contact','profil','user'];
 if (in_array($action,$protectedPages)) {
@@ -34,7 +32,6 @@ if(in_array($action,['login','register'])){
     $middleware -> isConnected();
 }
 
-// Protéger uniquement 'update' et 'delete' simples, pas les variantes du profil
 if (in_array($action,['delete','update']) && !in_array($action, ['update-profile', 'update-password'])) {
     $middleware->isAdmin();
 }

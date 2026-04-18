@@ -108,7 +108,7 @@ class User {
         ]);
     }
 
-    // ✅ Mise à jour du mot de passe séparée
+    // Mise à jour du mot de passe séparée
     public function updatePassword(int $id, string $hashedMdp){
         $query = "UPDATE {$this->table} SET mdp = :mdp WHERE id = :id";
         $stmt  = $this->conn->prepare($query);

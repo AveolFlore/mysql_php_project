@@ -12,7 +12,7 @@ class AuthController {
     public function __construct(){
         $this->database  = new Database;
         $this->pdo       = $this->database->connect();
-        $this->userModel = new User($this->pdo); // ✅ une seule connexion
+        $this->userModel = new User($this->pdo); 
     }
 
     public function index(): array {
@@ -135,7 +135,6 @@ class AuthController {
         exit;
     }
 
-    // ✅ Mise à jour profil (nom + email seulement)
     public function updateProfile(array $data){
         if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -171,7 +170,6 @@ class AuthController {
         exit;
     }
 
-    // ✅ Mise à jour mot de passe séparée
     public function updatePassword(array $data){
         if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -192,13 +190,11 @@ class AuthController {
             exit;
         }
 
-        // ✅ Vérifier l'ancien mot de passe
         if (!password_verify($ancienMdp, $user['mdp'])) {
             header("Location:/page-profil?msg=Ancien mot de passe incorrect");
             exit;
         }
 
-        // ✅ Vérifier la confirmation
         if ($nouveauMdp !== $confirmation) {
             header("Location:/page-profil?msg=Les mots de passe ne correspondent pas");
             exit;

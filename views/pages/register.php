@@ -26,7 +26,6 @@ $msg = $_GET['msg'] ?? null;
                 <input type="email" name="email" placeholder="Votre email" required>
                 <input type="password" name="mdp" placeholder="Mot de passe" required minlength="6">
 
-                <!-- ✅ Champ ajouté -->
                 <input type="password" name="mdp_confirm" placeholder="Confirmer le mot de passe" required minlength="6">
 
                 <input type="submit" value="S'inscrire" name="add_etudiant">
